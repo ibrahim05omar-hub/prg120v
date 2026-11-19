@@ -1,6 +1,15 @@
 <?php
 
-$config = require __DIR__ . '/config.local.php';
+
+$config = file_exists(__DIR__ . '/config.local.php')
+    ? require __DIR__ . '/config.local.php'
+    : [
+        'host' => getenv('DB_HOST'),
+        'dbname' => getenv('DB_NAME'),
+        'username' => getenv('DB_USER'),
+        'password' => getenv('DB_PASSWORD')
+    ];
+
 
 try {
     $pdo = new PDO(
