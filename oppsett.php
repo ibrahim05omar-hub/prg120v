@@ -46,7 +46,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 }
             }
         } catch (mysqli_sql_exception $e) {
-            $error = 'Databasefeil, kode: ' . $e->getCode();
+            $error = 'Databasefeil: ' . $e->getMessage();
         }
     }
 }
