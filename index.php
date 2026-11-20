@@ -1,85 +1,69 @@
-
 <?php
 require 'database.php';
 
+$melding = '';
 
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['registrer_klasse'])) {
-    $klassekode = trim($_POST['klassekode']);
-    $klassenavn = trim($_POST['klassenavn']);
-    $studiumkode = trim($_POST['studiumkode']);
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    if (isset($_POST['registrer_klasse'])) {
+        $klassekode = trim($_POST['klassekode'] ?? '');
+        $klassenavn = trim($_POST['klassenavn'] ?? '');
+        $studiumkode = trim($_POST['studiumkode'] ?? '');
 
-    if ($klassekode !== '' && $klassenavn !== '' && $studiumkode !== '') {
-        try {
-            $stmt = $pdo->prepare(
-                "INSERT INTO klasse (klassekode, klassenavn, studiumkode)
-                 VALUES (?, ?, ?)"
-            );
-            $stmt->execute([$klassekode, $klassenavn, $studiumkode]);
-            $melding = "Klassen ble registrert.";
-        } catch (PDOException $e) {
-            $melding = "Kunne ikke registrere klassen.";
+        if ($klassekode !== '' && $klassenavn !== '' && $studiumkode !== '') {
+            try {
+                $stmt = $db->prepare('INSERT INTO klasse (klassekode, klassenavn, studiumkode) VALUES (?, ?, ?)');
+                $stmt->bind_param('sss', $klassekode, $klassenavn, $studiumkode);
+                $stmt->execute();
+                $melding = 'Klassen ble registrert.';
+            } catch (mysqli_sql_exception $e) {
+                $melding = 'Kunne ikke registrere klassen. Sjekk om klassekoden allerede finnes.';
+            }
+        } else {
+            $melding = 'Fyll ut alle feltene.';
         }
-    } else {
-        $melding = "Fyll ut alle feltene.";
-    }
-}
-
-
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['slett_klasse'])) {
-    $klassekode = $_POST['klassekode'] ?? '';
-
-    try {
-        $stmt = $pdo->prepare(
-            "DELETE FROM klasse WHERE klassekode = ?"
-        );
-        $stmt->execute([$klassekode]);
-        $melding = "Klassen ble slettet.";
-    } catch (PDOException $e) {
-        $melding = "Klassen kan ikke slettes hvis den har studenter.";
-    }
-}
-
-
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['registrer_student'])) {
-    $brukernavn = trim($_POST['brukernavn'] ?? '');
-    $fornavn = trim($_POST['fornavn'] ?? '');
-    $etternavn = trim($_POST['etternavn'] ?? '');
-    $klassekode = $_POST['student_klassekode'] ?? '';
-
-    if ($brukernavn !== '' && $fornavn !== '' &&
-        $etternavn !== '' && $klassekode !== '') {
+    } elseif (isset($_POST['slett_klasse'])) {
+        $klassekode = trim($_POST['klassekode'] ?? '');
         try {
-            $stmt = $pdo->prepare(
-                "INSERT INTO student (brukernavn, fornavn, etternavn, klassekode)
-                 VALUES (?, ?, ?, ?)"
-            );
-            $stmt->execute([$brukernavn, $fornavn, $etternavn, $klassekode]);
-            $melding = "Studenten ble registrert.";
-        } catch (PDOException $e) {
-            $melding = "Kunne ikke registrere studenten.";
+            $stmt = $db->prepare('DELETE FROM klasse WHERE klassekode = ?');
+            $stmt->bind_param('s', $klassekode);
+            $stmt->execute();
+            $melding = 'Klassen ble slettet.';
+        } catch (mysqli_sql_exception $e) {
+            $melding = 'Klassen kan ikke slettes hvis den har studenter.';
         }
-    } else {
-        $melding = "Fyll ut alle feltene.";
+    } elseif (isset($_POST['registrer_student'])) {
+        $brukernavn = trim($_POST['brukernavn'] ?? '');
+        $fornavn = trim($_POST['fornavn'] ?? '');
+        $etternavn = trim($_POST['etternavn'] ?? '');
+        $klassekode = trim($_POST['student_klassekode'] ?? '');
+
+        if ($brukernavn !== '' && $fornavn !== '' && $etternavn !== '' && $klassekode !== '') {
+            try {
+                $stmt = $db->prepare('INSERT INTO student (brukernavn, fornavn, etternavn, klassekode) VALUES (?, ?, ?, ?)');
+                $stmt->bind_param('ssss', $brukernavn, $fornavn, $etternavn, $klassekode);
+                $stmt->execute();
+                $melding = 'Studenten ble registrert.';
+            } catch (mysqli_sql_exception $e) {
+                $melding = 'Kunne ikke registrere studenten. Sjekk brukernavn og klasse.';
+            }
+        } else {
+            $melding = 'Fyll ut alle feltene.';
+        }
+    } elseif (isset($_POST['slett_student'])) {
+        $brukernavn = trim($_POST['brukernavn'] ?? '');
+        try {
+            $stmt = $db->prepare('DELETE FROM student WHERE brukernavn = ?');
+            $stmt->bind_param('s', $brukernavn);
+            $stmt->execute();
+            $melding = 'Studenten ble slettet.';
+        } catch (mysqli_sql_exception $e) {
+            $melding = 'Kunne ikke slette studenten.';
+        }
     }
 }
 
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['slett_student'])) {
-    $brukernavn = $_POST['brukernavn'] ?? '';
-
-    try {
-        $stmt = $pdo->prepare(
-            "DELETE FROM student WHERE brukernavn = ?"
-        );
-        $stmt->execute([$brukernavn]);
-        $melding = "Studenten ble slettet.";
-    } catch (PDOException $e) {
-        $melding = "Kunne ikke slette studenten.";
-    }
-}
-
-$klasser = $pdo->query("SELECT * FROM klasse ORDER BY klassekode")->fetchAll(PDO::FETCH_ASSOC);
-
-$studenter = $pdo->query("SELECT * FROM student ORDER BY brukernavn")->fetchAll(PDO::FETCH_ASSOC);
+$klasser = $db->query('SELECT * FROM klasse ORDER BY klassekode')->fetch_all(MYSQLI_ASSOC);
+$studenter = $db->query('SELECT * FROM student ORDER BY brukernavn')->fetch_all(MYSQLI_ASSOC);
 ?>
 
 <!DOCTYPE html>
