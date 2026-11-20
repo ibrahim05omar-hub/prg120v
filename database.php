@@ -5,7 +5,7 @@ $config = is_file($configPath)
     ? require $configPath
     : [
         'host' => getenv('DB_HOST'),
-        'dbname' => getenv('DB_NAME'),
+        'dbname' => getenv('DB_DATABASE'),
         'username' => getenv('DB_USER'),
         'password' => getenv('DB_PASSWORD'),
     ];
